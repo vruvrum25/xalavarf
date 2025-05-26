@@ -7,34 +7,47 @@
             k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
         })(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
         
-        ym(101959694,"init",{defer:1,trackLinks:1});
+        ym(101959694,"init",{
+            defer: true,
+            trackLinks: true,
+            webvisor: true,
+            cookie: {
+                use: true,
+                name: '_ym_uid',
+                domain: location.hostname
+            }
+        });
     </script>
 </head>
 <body>
     <script>
         (function(){
-            // 1. Получаем ClientID из cookie или Метрики
-            const getCID = () => {
+            // 1. Получаем ClientID через API или cookie
+            const getCID = (callback) => {
+                // Сначала проверяем cookie
                 const cookieCID = document.cookie.match(/_ym_uid=([^;]*)/)?.[1];
-                if(cookieCID) return cookieCID;
+                if(cookieCID) return callback(cookieCID);
                 
-                let cid;
-                ym(101959694, 'getClientID', id => cid = id);
-                return cid || Date.now();
+                // Если cookie нет, используем API
+                ym(101959694, 'getClientID', (clientid) => {
+                    callback(clientid || Date.now().toString());
+                });
             };
 
-            // 2. Формируем URL с параметрами
-            const params = new URLSearchParams({start: getCID()});
-            const tgAppLink = `tg://resolve?domain=xalava_rf_bot&${params}`;
-            const tgWebLink = `https://t.me/xalava_rf_bot?${params}`;
+            // 2. Инициируем редирект
+            getCID((clientid) => {
+                const params = new URLSearchParams({start: clientid});
+                const tgAppLink = `tg://resolve?domain=xalava_rf_bot&${params}`;
+                const tgWebLink = `https://t.me/xalava_rf_bot?${params}`;
 
-            // 3. Пытаемся открыть в приложении
-            window.location.href = tgAppLink;
-            
-            // 4. Фолбэк на веб-версию через 50мс
-            setTimeout(() => {
-                window.location.replace(tgWebLink);
-            }, 50);
+                // 3. Пытаемся открыть в приложении
+                window.location.href = tgAppLink;
+                
+                // 4. Фолбэк через 50мс
+                setTimeout(() => {
+                    window.location.replace(tgWebLink);
+                }, 50);
+            });
 
         })();
     </script>
