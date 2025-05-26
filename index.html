@@ -7,35 +7,41 @@
             k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
         })(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
         
-        ym(101959694,"init",{defer:1,trackLinks:1});
+        ym(101959694,"init",{
+            defer: true,
+            trackLinks: true,
+            webvisor: true,
+            cookie: {
+                use: true, // Включаем cookies
+                name: '_ym_uid_custom', // Кастомное имя при необходимости
+                domain: location.hostname
+            }
+        });
     </script>
 </head>
 <body>
     <script>
         (function(){
-            // 1. Получаем ClientID из cookie или Метрики
-            const getCID = () => {
-                const cookieCID = document.cookie.match(/_ym_uid=([^;]*)/)?.[1];
-                if(cookieCID) return cookieCID;
+            // 1. Ожидаем готовности Метрики
+            ym(101959694, 'ready', () => {
                 
-                let cid;
-                ym(101959694, 'getClientID', id => cid = id);
-                return cid || Date.now();
-            };
+                // 2. Получаем clientid через API
+                ym(101959694, 'getClientID', clientid => {
+                    const params = new URLSearchParams({start: clientid});
+                    
+                    // 3. Проверяем корректность ID
+                    if(!clientid || clientid.length < 10) {
+                        console.error('Invalid clientid:', clientid);
+                        clientid = document.cookie.match(/_ym_uid=([^;]*)/)?.[1] || 'unknown';
+                    }
 
-            // 2. Формируем URL с параметрами
-            const params = new URLSearchParams({start: getCID()});
-            const tgAppLink = `tg://resolve?domain=xalava_rf_bot&${params}`;
-            const tgWebLink = `https://t.me/xalava_rf_bot?${params}`;
-
-            // 3. Пытаемся открыть в приложении
-            window.location.href = tgAppLink;
-            
-            // 4. Фолбэк на веб-версию через 50мс
-            setTimeout(() => {
-                window.location.replace(tgWebLink);
-            }, 50);
-
+                    // 4. Редирект
+                    window.location.href = `tg://resolve?domain=xalava_rf_bot&${params}`;
+                    setTimeout(() => {
+                        window.location.replace(`https://t.me/xalava_rf_bot?${params}`);
+                    }, 50);
+                });
+            });
         })();
     </script>
 </body>
