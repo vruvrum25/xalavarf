@@ -11,44 +11,58 @@
             defer: true,
             trackLinks: true,
             webvisor: true,
-            cookie: {
-                use: true,
-                name: '_ym_uid',
-                domain: location.hostname
-            }
+            clickmap: true
         });
     </script>
 </head>
 <body>
     <script>
         (function(){
-            // 1. Получаем ClientID через API или cookie
-            const getCID = (callback) => {
-                // Сначала проверяем cookie
-                const cookieCID = document.cookie.match(/_ym_uid=([^;]*)/)?.[1];
-                if(cookieCID) return callback(cookieCID);
+            // 1. Принудительно отправляем событие просмотра страницы
+            ym(101959694, 'hit', window.location.href, {
+                callback: function() {
+                    // 2. После отправки данных получаем ClientID
+                    getCID(function(clientid) {
+                        // 3. Перенаправляем в Telegram
+                        redirectToTelegram(clientid);
+                    });
+                },
+                ctx: this
+            });
+            
+            // Функция получения ClientID
+            function getCID(callback) {
+                // Пробуем получить из куки
+                const cookieMatch = document.cookie.match(/_ym_uid=([^;]*)/);
+                if(cookieMatch) {
+                    return callback(cookieMatch[1]);
+                }
                 
-                // Если cookie нет, используем API
-                ym(101959694, 'getClientID', (clientid) => {
+                // Если куки нет, получаем через API
+                ym(101959694, 'getClientID', function(clientid) {
                     callback(clientid || Date.now().toString());
                 });
-            };
-
-            // 2. Инициируем редирект
-            getCID((clientid) => {
+            }
+            
+            // Функция перенаправления в Telegram
+            function redirectToTelegram(clientid) {
                 const params = new URLSearchParams({start: clientid});
                 const tgAppLink = `tg://resolve?domain=xalava_rf_bot&${params}`;
                 const tgWebLink = `https://t.me/xalava_rf_bot?${params}`;
 
-                // 3. Пытаемся открыть в приложении
+                // Пытаемся открыть в приложении
                 window.location.href = tgAppLink;
                 
-                // 4. Фолбэк через 50мс
+                // Фолбэк через 50мс
                 setTimeout(() => {
                     window.location.replace(tgWebLink);
                 }, 50);
-            });
-
+            }
+            
+            // Защита на случай проблем с метрикой
+            setTimeout(() => {
+                getCID(redirectToTelegram);
+            }, 1000);
         })();
     </script>
 </body>
